@@ -38,7 +38,7 @@ defmodule Mix.Tasks.GenPuzzle do
     {:ok, {_req, _headers, results}} =
       :httpc.request(
         :get,
-        {url, [{~c"authorization", "Bearer " <> cookie}]},
+        {url, [{~c"cookie", "session=" <> cookie}]},
         [{:ssl, [verify: :verify_none]}],
         []
       )
