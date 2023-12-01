@@ -27,25 +27,31 @@ defmodule Day1 do
   def_solution part_2(stream_input) do
     stream_input
     |> Stream.map(&replace/1)
-    |> __part_1__()
+    |> Enum.sum()
   end
 
-  defp replace(<<head::binary-size(1), rest::binary>> = string) do
-    case string do
-      "one" <> _rest -> "1" <> replace(rest)
-      "two" <> _rest -> "2" <> replace("wo" <> rest)
-      "three" <> _rest -> "3" <> replace("hree" <> rest)
-      "four" <> _rest -> "4" <> replace("our" <> rest)
-      "five" <> _rest -> "5" <> replace("ive" <> rest)
-      "six" <> _rest -> "6" <> replace("ix" <> rest)
-      "seven" <> _rest -> "7" <> replace("even" <> rest)
-      "eight" <> _rest -> "8" <> replace("ight" <> rest)
-      "nine" <> _rest -> "9" <> replace("ine" <> rest)
-      _ -> head <> replace(rest)
-    end
+  @replacements %{
+    "one" => "1",
+    "two" => "2",
+    "three" => "3",
+    "four" => "4",
+    "five" => "5",
+    "six" => "6",
+    "seven" => "7",
+    "eight" => "8",
+    "nine" => "9"
+  }
+  @overlapping_regex ~r/(?=(\d|#{@replacements |> Map.keys() |> Enum.join("|")}))/
+
+  defp replace(string) do
+    [first_digit | _] = digits = Regex.scan(@overlapping_regex, string)
+    converted_last = digits |> List.last() |> convert()
+
+    first_digit |> convert() |> Kernel.<>(converted_last) |> String.to_integer()
   end
 
-  defp replace(""), do: ""
+  defp convert([_, capture]) when is_map_key(@replacements, capture), do: @replacements[capture]
+  defp convert([_, capture]), do: capture
 
   def test_input(:part_1) do
     """
