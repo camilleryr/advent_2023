@@ -9,5 +9,5 @@ Puzzles can be found [here](https://adventofcode.com/2023/)
 | Day | Part | Execution Time |
 | --- | ---- | -------------- |
 | 1 | 1 | 10 ms|
-| 1 | 2 | 15 ms|
-||total|26 ms|
+| 1 | 2 | 13 ms|
+||total|23 ms|

@@ -24,7 +24,7 @@ defmodule Mix.Tasks.GenPuzzle do
     File.write("./input/day_#{day}.txt", input)
   end
 
-  defp get(path \\ "", day) do
+  defp get(path, day) do
     cookie = Application.get_env(:elixir, :aoc_cookie)
     base = "https://adventofcode.com/2023/day/#{day}"
 
@@ -47,15 +47,12 @@ defmodule Mix.Tasks.GenPuzzle do
   end
 
   defp puzzle_template(day) do
-    puzzle = day |> get() |> parse()
-
     ~s"""
     defmodule Day#{day} do
+      @moduledoc "https://adventofcode.com/2023/day/#{day}"
       import Advent2023
 
       @doc ~S\"\"\"
-      #{puzzle}
-
       ## Example
 
         iex> part_1(test_input(:part_1))
@@ -82,24 +79,5 @@ defmodule Mix.Tasks.GenPuzzle do
     |> String.replace("\n\n", "\n")
     |> String.trim("\n")
     |> Code.format_string!()
-  end
-
-  defp parse(htlm_as_charlist) do
-    {:safe, result} =
-      htlm_as_charlist
-      |> to_string()
-      |> String.split(~r/<\/?article[a-z0-9\s\\"=-]*>/)
-      |> Enum.drop(1)
-      |> List.first()
-      |> String.replace(~r/<li>/, "\\g{1}- ", global: true)
-      |> String.replace(
-        ~r/<\/?\s?br>|<\/\s?p>|<\/\s?div>|<\/\s?h.>/,
-        "\\g{1}\n",
-        global: true
-      )
-      |> String.replace("\n", "\n\n")
-      |> PhoenixHtmlSanitizer.Helpers.sanitize(:strip_tags)
-
-    result
   end
 end
