@@ -11,7 +11,7 @@ defmodule Day2 do
     stream_input
     |> Stream.map(&parse/1)
     |> Stream.map(fn {game, rounds} -> {game, get_rounds(rounds)} end)
-    |> Stream.reject(fn {game, max_cubes} ->
+    |> Stream.reject(fn {_game, max_cubes} ->
       Enum.any?(%{red: 12, green: 13, blue: 14}, fn {color, max} ->
         Map.get(max_cubes, color, 0) > max
       end)
