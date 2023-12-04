@@ -47,7 +47,7 @@ defmodule Day3 do
     end)
   end
 
-  defp symbol_adjacent({{x_range, num_y}, _cell}, schematic) do
+  defp symbol_adjacent?({{x_range, num_y}, _cell}, schematic) do
     for x <- (x_range.first - 1)..(x_range.last + 1),
         y <- (num_y - 1)..(num_y + 1),
         not (y == num_y and x in x_range) do
@@ -82,7 +82,7 @@ defmodule Day3 do
       end)
       |> then(fn {range, num_string} -> {{range, y}, String.to_integer(num_string)} end)
     end)
-    |> Enum.filter(&symbol_adjacent(&1, schematic))
+    |> Enum.filter(&symbol_adjacent?(&1, schematic))
   end
 
   def test_input(:part_1) do

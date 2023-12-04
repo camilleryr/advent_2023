@@ -9,6 +9,8 @@ defmodule Mix.Tasks.Solve do
   def run([day, part | rest]) do
     {time, result} = :timer.tc(fn -> Advent2023.solve(day, part, rest) end)
 
+    _ = :os.cmd(~c"echo #{result} | pbcopy")
+
     IO.puts([
       IO.ANSI.green(),
       "AOC Day #{day} / Part #{part}\n",
