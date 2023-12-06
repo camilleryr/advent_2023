@@ -31,12 +31,20 @@ defmodule Day6 do
     iex> find_winning_margin_of_error(%{time: 7, distance: 9})
     4
   """
-  def find_winning_margin_of_error(%{time: time, distance: distance}) do
-    0..time
-    |> Enum.filter(fn charging_time ->
-      (charging_time * (time - charging_time)) > distance
+  def find_winning_margin_of_error(%{time: time} = config) do
+    first = find(config, 0..time)
+    last = find(config, time..0)
+
+    Range.size(first..last)
+  end
+
+  defp find(%{time: time, distance: distance}, range) do
+    range
+    |> Stream.filter(fn charging_time ->
+      charging_time * (time - charging_time) > distance
     end)
-    |> Enum.count()
+    |> Enum.take(1)
+    |> List.first()
   end
 
   defp parse(input, preprocess \\ &Function.identity/1) do
