@@ -32,4 +32,6 @@ Puzzles can be found [here](https://adventofcode.com/2023/)
 | 11 | 2 | 3 ms|
 | 13 | 1 | 11 ms|
 | 13 | 2 | 236 ms|
-||total|164848 ms|
+| 14 | 1 | 7 ms|
+| 14 | 2 | 1414 ms|
+||total|166269 ms|
