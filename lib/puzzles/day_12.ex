@@ -10,22 +10,20 @@ defmodule Day12 do
   def_solution part_1(stream_input) do
     stream_input
     |> Enum.map(&parse_line/1)
-    |> Task.async_stream(&find_possible_solutions/1)
-    |> Stream.map(&elem(&1, 1))
+    |> Enum.map(&find_possible_solutions/1)
     |> Enum.sum()
   end
 
   @doc ~S"""
   ## Example
-    # iex> part_2(test_input(:part_1))
-    # 525152
+    iex> part_2(test_input(:part_1))
+    525152
   """
   def_solution part_2(stream_input) do
     stream_input
     |> Enum.map(&parse_line/1)
     |> Enum.map(&unfold_line/1)
-    |> Task.async_stream(&find_possible_solutions/1, timeout: :infinity)
-    |> Stream.map(&elem(&1, 1))
+    |> Enum.map(&find_possible_solutions/1)
     |> Enum.sum()
   end
 
@@ -36,45 +34,43 @@ defmodule Day12 do
   """
   def find_possible_solutions({record, groups}) do
     record
-    |> Enum.filter(&(&1 == "?"))
-    |> expand_unkown([])
-    |> Enum.map(&replace(record, &1))
-    |> Enum.filter(fn replaced_record ->
-      replaced_groups =
-        replaced_record
-        |> Enum.chunk_by(& &1)
-        |> Enum.filter(fn [gear | _] -> gear == "#" end)
-        |> Enum.map(&length/1)
-
-      groups == replaced_groups
-    end)
-    |> Enum.count()
+    |> find(:empty, groups, %{count: 0, memo: %{}})
+    |> Map.get(:count)
   end
 
-  def replace(["?" | rest_record], [replacement | rest_replacements]),
-    do: [replacement | replace(rest_record, rest_replacements)]
+  defp find([], :empty, [], state), do: Map.update!(state, :count, &(&1 + 1))
+  defp find([], 0, [], state), do: Map.update!(state, :count, &(&1 + 1))
 
-  def replace([head | rest_record], replacements), do: [head | replace(rest_record, replacements)]
-  def replace([], []), do: []
+  defp find(["." | rest], :empty, groups, state), do: find(rest, :empty, groups, state)
+  defp find(["." | rest], 0, groups, state), do: find(rest, :empty, groups, state)
+  defp find(["." | _rest], _, _, state), do: state
 
-  @doc ~S"""
-  ## Example
-    iex> expand_unkown(["?"], [])
-    [["#"], [","]]
+  defp find(["#" | rest], :empty, [], state), do: state
+  defp find(["#" | rest], :empty, [next | groups], state), do: find(rest, next - 1, groups, state)
+  defp find(["#" | _rest], 0, _, state), do: state
+  defp find(["#" | rest], rem, groups, state), do: find(rest, rem - 1, groups, state)
 
-    iex> expand_unkown(["?", ?"], [])
-    [["#", "#"], ["#", ","], [",", "#"], [",", ","]]
-  """
-  def expand_unkown([], acc), do: acc
-  def expand_unkown([_ | rest], []), do: expand_unkown(rest, [["#"], [","]])
+  defp find(["?" | rest], rem, groups, state) do
+    state1 = memo_find(["." | rest], rem, groups, state)
+    state2 = memo_find(["#" | rest], rem, groups, %{state | memo: state1.memo})
 
-  def expand_unkown([_ | rest], acc) do
-    new_acc =
-      for x <- ["#", ","], existing <- acc do
-        [x | existing]
-      end
+    %{count: state1.count + state2.count, memo: Map.merge(state1.memo, state2.memo)}
+  end
 
-    expand_unkown(rest, new_acc)
+  defp find(_, _, _, state), do: state
+
+  defp memo_find(record, rem, groups, state) do
+    case Map.get(state.memo, {record, rem, groups}) do
+      nil ->
+        record
+        |> find(rem, groups, state)
+        |> then(fn ret ->
+          Map.update!(ret, :memo, &Map.put(&1, {record, rem, groups}, ret.count))
+        end)
+
+      count ->
+        Map.update!(state, :count, &(&1 + count))
+    end
   end
 
   @doc ~S"""
@@ -87,7 +83,7 @@ defmodule Day12 do
     {new_record, List.flatten(List.duplicate(groups, 5))}
   end
 
-  defp parse_line(line) do
+  def parse_line(line) do
     [record | groups] = String.split(line, [" ", ","])
     {String.graphemes(record), Enum.map(groups, &String.to_integer/1)}
   end
