@@ -38,4 +38,6 @@ Puzzles can be found [here](https://adventofcode.com/2023/)
 | 14 | 2 | 1414 ms|
 | 15 | 1 | 3 ms|
 | 15 | 2 | 4 ms|
-||total|167143 ms|
+| 16 | 1 | 12 ms|
+| 16 | 2 | 460 ms|
+||total|167615 ms|
