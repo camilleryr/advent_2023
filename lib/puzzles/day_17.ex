@@ -8,34 +8,75 @@ defmodule Day17 do
     102
   """
   def_solution part_1(stream_input) do
-    stream_input
-    |> parse()
-    |> find_shortest_distance(MapSet.new())
+    do_solve(stream_input, 1..3)
   end
 
   @doc ~S"""
   ## Example
     iex> part_2(test_input(:part_1))
+    94
+
+    iex> part_2(test_input(:part_2))
+    71
   """
   def_solution part_2(stream_input) do
-    stream_input
+    do_solve(stream_input, 4..10)
   end
 
-  defp find_shortest_distance(map, removed_edges) do
-    %{path: path, total_weight: total_weight} = dijkstra(map, {0, 0}, removed_edges)
+  defp do_solve(stream_input, path_range) do
+    map = stream_input |> parse()
+    {{start, _}, {finish, _}} = Enum.min_max(map)
 
-    IO.inspect(path)
-    case edge_to_remove(path) |> IO.inspect() do
-      nil -> total_weight
-      edge ->
-        Process.sleep(100)
-        find_shortest_distance(map, MapSet.put(removed_edges, edge))
+    [
+      %{dir: :south, weight: 0, path: [start]},
+      %{dir: :east, weight: 0, path: [start]}
+    ]
+    |> find_path(finish, map, path_range)
+    |> Map.get(:weight)
+  end
+
+  defp find_path(incomplete, destination, map, path_range, best \\ nil)
+
+  defp find_path([], _destination, _map, _path_range, best), do: best
+
+  defp find_path(states, destination, map, path_range, best) do
+    states =
+      for %{dir: dir, path: [point | _rest] = path, weight: weight} = state <- states,
+          {next_dir, next_path, path_weight} <-
+            get_next_paths(dir, point, path, map, path_range),
+          weight + path_weight < best[:weight] do
+        %{state | dir: next_dir, path: next_path ++ path, weight: weight + path_weight}
+      end
+
+    {complete, incomplete} = Enum.split_with(states, &(List.first(&1.path) == destination))
+    maybe_best = Enum.min_by(complete, & &1.weight, &<=/2, fn -> nil end)
+    best = if maybe_best[:weight] < best[:weight], do: maybe_best, else: best
+
+    incomplete
+    |> Enum.group_by(fn %{path: [h | _], dir: dir} ->
+      {if(dir in [:north, :south], do: 1, else: 2), h}
+    end)
+    |> Enum.map(fn {_key, vals} -> Enum.min_by(vals, & &1.weight) end)
+    |> find_path(destination, map, path_range, best)
+  end
+
+  defp get_next_paths(facing_dir, point, path, map, path_range) do
+    for length <- path_range,
+        dir <- get_dirs(facing_dir),
+        options = get_options(dir, point, length),
+        Enum.all?(options, &Map.has_key?(map, &1)),
+        Enum.all?(options, &(&1 not in path)) do
+      {dir, options, options |> Enum.map(&Map.fetch!(map, &1)) |> Enum.sum()}
     end
   end
 
-  defp edge_to_remove([{_, rel}, {_, rel}, {v1, rel}, {v2, rel} | _]), do: {v1, v2}
-  defp edge_to_remove([_ | rest]), do: edge_to_remove(rest)
-  defp edge_to_remove([]), do: nil
+  defp get_options(:north, {x, y}, length), do: Enum.map(length..1, &{x, y - &1})
+  defp get_options(:south, {x, y}, length), do: Enum.map(length..1, &{x, y + &1})
+  defp get_options(:east, {x, y}, length), do: Enum.map(length..1, &{x + &1, y})
+  defp get_options(:west, {x, y}, length), do: Enum.map(length..1, &{x - &1, y})
+
+  defp get_dirs(dir) when dir in [:north, :south], do: [:east, :west]
+  defp get_dirs(dir) when dir in [:east, :west], do: [:north, :south]
 
   def parse(stream_input) do
     for {line, y} <- Stream.with_index(stream_input),
@@ -63,88 +104,13 @@ defmodule Day17 do
     """
   end
 
-  @doc """
-  Copied from Advent21 Day15
-  """
-  def dijkstra(weight_map, starting_point, removed_edges) do
-    distances = %{starting_point => {0, nil}}
-    {destination, _} = Enum.max(weight_map)
-
-    dijkstra(starting_point, :gb_trees.empty(), distances, weight_map, removed_edges, destination)
-  end
-
-  def dijkstra(destination, _queue, distances, _weights, _removed_edges, destination) do
-    build_path(distances)
-  end
-
-  def dijkstra(vertex, queue, distances, weights, removed_edges, destination) do
-    {current_distance, _parent} = distances[vertex]
-
-    neighbors =
-      vertex
-      |> neightbors()
-      |> Enum.filter(fn {p, _rel} ->
-        Map.has_key?(weights, p) and
-          not Map.has_key?(distances, p) and
-          {vertex, p} not in removed_edges
-      end)
-
-    updated_distances =
-      Enum.reduce(neighbors, distances, fn {neightbor, relationship}, d ->
-        neighbor_weight = weights[neightbor]
-        current_neighbor_distance = current_distance + neighbor_weight
-
-        Map.update(
-          d,
-          neightbor,
-          {current_neighbor_distance, {vertex, relationship}},
-          fn existing_distance ->
-            min(existing_distance, {current_neighbor_distance, {vertex, relationship}})
-          end
-        )
-      end)
-
-    updated_queue =
-      Enum.reduce(neighbors, queue, fn {n, _}, acc -> put_queue(acc, updated_distances[n], n) end)
-
-    {next_vertex, next_queue} = pop_queue(updated_queue)
-
-    dijkstra(next_vertex, next_queue, updated_distances, weights, removed_edges, destination)
-  end
-
-  defp build_path(weight_map) do
-    {destination, {total_weight, parent}} = Enum.max(weight_map)
-
-    [parent, destination]
-    |> build_path(weight_map)
-    |> then(fn path -> %{total_weight: total_weight, path: path} end)
-  end
-
-  defp build_path([{v, _rel} = x | _] = path, distances_map) do
-    case distances_map[v] do
-      {_weight, nil} -> path
-      {_weight, parent} -> build_path([parent | path], distances_map)
-    end
-  end
-
-  def put_queue(tree, priority, value) do
-    case :gb_trees.take_any(priority, tree) do
-      {values, updated_tree} -> :gb_trees.insert(priority, [value | values], updated_tree)
-      _ -> :gb_trees.insert(priority, [value], tree)
-    end
-  end
-
-  def pop_queue(tree) do
-    case :gb_trees.take_smallest(tree) do
-      {_priority, [val], updated_tree} ->
-        {val, updated_tree}
-
-      {priority, [val | rest], updated_tree} ->
-        {val, :gb_trees.insert(priority, rest, updated_tree)}
-    end
-  end
-
-  def neightbors({x, y}) do
-    [{{x, y - 1}, :up}, {{x + 1, y}, :right}, {{x, y + 1}, :down}, {{x - 1, y}, :left}]
+  def test_input(:part_2) do
+    """
+    111111111111
+    999999999991
+    999999999991
+    999999999991
+    999999999991
+    """
   end
 end
