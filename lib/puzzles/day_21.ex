@@ -72,8 +72,6 @@ defmodule Day21 do
     |> Map.new(fn key -> {key, IO.ANSI.red() <> "O" <> IO.ANSI.reset()} end)
     |> then(&Map.merge(map, &1))
     |> print_grid()
-
-    Process.sleep(250)
   end
 
   @doc ~S"""

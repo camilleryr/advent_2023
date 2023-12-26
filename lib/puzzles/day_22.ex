@@ -27,7 +27,6 @@ defmodule Day22 do
     |> Enum.group_by(&elem(&1, 1), &elem(&1, 0))
     |> Enum.sort()
     |> Enum.map(&disolve(initial, &1, MapSet.new(initial)))
-    |> IO.inspect()
     |> Enum.sum()
   end
 
@@ -35,6 +34,7 @@ defmodule Day22 do
     map
     |> Map.drop(cubes)
     |> Enum.group_by(&elem(&1, 1), &elem(&1, 0))
+    |> Enum.sort_by(fn {_id, cube} -> cube |> Enum.map(&elem(&1, 2)) |> Enum.min() end)
     |> drop_bricks()
     |> MapSet.new()
     |> MapSet.difference(set)

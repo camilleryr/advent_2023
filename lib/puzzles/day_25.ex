@@ -15,8 +15,11 @@ defmodule Day25 do
     |> Enum.product()
   end
 
+  def_solution part_2(stream_input) do
+    stream_input
+  end
+
   defp bisect(graph, heat_map, attempts) do
-    IO.inspect(length(attempts))
     vertices = Graph.vertices(graph)
 
     heat_map =
@@ -45,7 +48,6 @@ defmodule Day25 do
     if Graph.dijkstra(maybe_bisected, v1, v2) do
       bisect(graph, heat_map, [edges | attempts])
     else
-      IO.inspect(edges)
       Graph.components(maybe_bisected)
     end
   end
