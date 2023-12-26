@@ -73,12 +73,6 @@ defmodule Day23 do
     |> find_longest_path(map, destination)
   end
 
-  def transform(nil), do: " -- "
-
-  def transform(int) do
-    " " <> String.pad_leading(to_string(int), 2, "0") <> " "
-  end
-
   defp parse(stream_input, opts \\ []) do
     transformer = Keyword.get(opts, :transformer, & &1)
 
